@@ -23,11 +23,11 @@ namespace L4drivers {
  * {
  *   // create a register block reference for max. 16bit accesses, using a
  *   // MMIO register block implementation (at address 0x1000).
- *   Hw::Register_block<16> regs = new Hw::Mmio_register_block<16>(0x1000);
+ *   L4drivers::Register_block<16> regs = new L4drivers::Mmio_register_block<16>(0x1000);
  *
  *   // Alternatively it is allowed to use an implementation that allows
  *   // wider access than actually needed.
- *   Hw::Register_block<16> regs = new Hw::Mmio_register_block<32>(0x1000);
+ *   L4drivers::Register_block<16> regs = new L4drivers::Mmio_register_block<32>(0x1000);
  *
  *   // read a 16bit register at offset 8byte
  *   unsigned short x = regs.r<16>(8);
@@ -54,7 +54,7 @@ namespace L4drivers {
  *   regs.r<8>(0).modify(0xf, 3);
  *
  *   // fails to compile, because of too wide access
- *   // (32 bit access but regs is Hw::Register_block<16>)
+ *   // (32 bit access but regs is L4drivers::Register_block<16>)
  *   unsigned long v = regs.r<32>(4)
  * }
  * \endcode
