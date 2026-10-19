@@ -14,6 +14,7 @@
 namespace L4drivers {
 
 class Mmio_register_block_base
+: public Register_block_modify_mixin<Mmio_register_block_base>
 {
 protected:
   l4_addr_t _base;
@@ -40,6 +41,15 @@ public:
 /**
  * An MMIO block with up to 64-bit register access (32-bit default) and little
  * endian byte order.
+ *
+ * The block can be used through a Register_block or directly, which avoids
+ * the virtual function calls:
+ *
+ * \code{.cpp}
+ * L4drivers::Mmio_register_block<32> regs(0x1000);
+ * regs[0x10].modify(0xf, 3);
+ * l4_uint8_t v = regs.r<8>(0x14);
+ * \endcode
  */
 template< unsigned MAX_BITS = 32 >
 struct Mmio_register_block
@@ -48,6 +58,51 @@ struct Mmio_register_block
 {
   explicit Mmio_register_block(l4_addr_t base = 0, l4_addr_t shift = 0)
   : Mmio_register_block_base(base, shift) {}
+
+  using Register = Register_tmpl<MAX_BITS, Mmio_register_block_base>;
+  using Ro_register = Ro_register_tmpl<MAX_BITS, Mmio_register_block_base>;
+
+  /**
+   * Read only access to register at offset \a offset.
+   * \tparam BITS    The access width in bits for the register.
+   * \param  offset  The offset of the register within the register block.
+   * \return Register object allowing read only access with width \a BITS.
+   */
+  template< unsigned BITS >
+  Ro_register_tmpl<BITS, Mmio_register_block_base> r(unsigned offset) const
+  {
+    static_assert(BITS <= MAX_BITS, "Register access too wide");
+    return Ro_register_tmpl<BITS, Mmio_register_block_base>(*this, offset);
+  }
+
+  /**
+   * Read only access to register at offset \a offset.
+   * \param  offset  The offset of the register within the register block.
+   * \return Register object allowing read only access with width \a MAX_BITS.
+   */
+  Ro_register operator [] (unsigned offset) const
+  { return r<MAX_BITS>(offset); }
+
+  /**
+   * Read/write access to register at offset \a offset.
+   * \tparam BITS    The access width in bits for the register.
+   * \param  offset  The offset of the register within the register block.
+   * \return Register object allowing read/write access with width \a BITS.
+   */
+  template< unsigned BITS >
+  Register_tmpl<BITS, Mmio_register_block_base> r(unsigned offset)
+  {
+    static_assert(BITS <= MAX_BITS, "Register access too wide");
+    return Register_tmpl<BITS, Mmio_register_block_base>(*this, offset);
+  }
+
+  /**
+   * Read/write access to register at offset \a offset.
+   * \param  offset  The offset of the register within the register block.
+   * \return Register object allowing read/write access with width \a MAX_BITS.
+   */
+  Register operator [] (unsigned offset)
+  { return r<MAX_BITS>(offset); }
 };
 
 }
